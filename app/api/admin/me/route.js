@@ -55,14 +55,14 @@ export async function GET(request) {
   } catch (error) {
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
       return NextResponse.json(
-        { error: 'Token inválido o expirado' },
+        { error: 'Invalid or expired token' },
         { status: 401 }
       )
     }
 
-    console.error('Error verificando admin:', error)
+    console.error('Error verifying admin:', error)
     return NextResponse.json(
-      { error: 'Error al verificar autenticación' },
+      { error: 'Error verifying authentication' },
       { status: 500 }
     )
   }

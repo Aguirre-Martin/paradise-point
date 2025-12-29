@@ -9,7 +9,7 @@ export async function POST(request) {
 
     if (!adminPassword) {
       return NextResponse.json(
-        { error: 'Contraseña de administrador no configurada' },
+        { error: 'Admin password not configured' },
         { status: 500 }
       )
     }
@@ -22,7 +22,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Admin check error:', error)
     return NextResponse.json(
-      { error: 'Error de autenticación' },
+      { error: 'Authentication error' },
       { status: 500 }
     )
   }

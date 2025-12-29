@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 
-const prisma = new PrismaClient()
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 export async function GET() {
   try {
+    if (!prisma) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
+    }
+
     // Verify admin authentication
     const cookieStore = await cookies()
     const token = cookieStore.get('admin_token')
@@ -19,7 +22,7 @@ export async function GET() {
     try {
       jwt.verify(token.value, JWT_SECRET)
     } catch (error) {
-      return NextResponse.json({ error: 'Token inválido' }, { status: 401 })
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
     const clients = await prisma.client.findMany({

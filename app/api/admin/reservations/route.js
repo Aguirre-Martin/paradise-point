@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 
-const prisma = new PrismaClient()
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 
 // Helper to verify admin
@@ -26,6 +25,10 @@ async function verifyAdmin() {
 // GET all reservations
 export async function GET(request) {
   try {
+    if (!prisma) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
+    }
+
     const admin = await verifyAdmin()
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -75,6 +78,10 @@ export async function GET(request) {
 // POST new reservation
 export async function POST(request) {
   try {
+    if (!prisma) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503 })
+    }
+
     const admin = await verifyAdmin()
     if (!admin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
