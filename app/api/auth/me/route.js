@@ -34,9 +34,9 @@ export async function GET() {
 
     return NextResponse.json(user)
   } catch (error) {
-    console.error('Error en /api/auth/me:', error)
+    console.error('Error in /api/auth/me:', error)
     return NextResponse.json(
-      { error: 'Error al verificar sesión' },
+      { error: 'Error verifying session' },
       { status: 500 }
     )
   }

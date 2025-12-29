@@ -25,7 +25,7 @@ export async function GET() {
   } catch (error) {
     console.error('Error fetching calendar:', error)
     return NextResponse.json(
-      { error: 'Error al obtener el calendario' },
+      { error: 'Error fetching calendar' },
       { status: 500 }
     )
   }
@@ -34,7 +34,7 @@ export async function GET() {
 export async function POST(request) {
   if (!prisma) {
     return NextResponse.json(
-      { error: 'Base de datos no configurada. Configurá DATABASE_URL en las variables de entorno.' },
+      { error: 'Database not configured. Set DATABASE_URL in environment variables.' },
       { status: 503 }
     )
   }
@@ -45,14 +45,14 @@ export async function POST(request) {
 
     if (!date || typeof date !== 'string') {
       return NextResponse.json(
-        { error: 'Fecha inválida' },
+        { error: 'Invalid date' },
         { status: 400 }
       )
     }
 
     if (!VALID_STATUSES.includes(status)) {
       return NextResponse.json(
-        { error: 'Estado inválido. Debe ser: disponible, consulta o reservado' },
+        { error: 'Invalid status. Must be: available, inquiry, or reserved' },
         { status: 400 }
       )
     }
@@ -60,7 +60,7 @@ export async function POST(request) {
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/
     if (!dateRegex.test(date)) {
       return NextResponse.json(
-        { error: 'La fecha debe estar en formato YYYY-MM-DD' },
+        { error: 'Date must be in YYYY-MM-DD format' },
         { status: 400 }
       )
     }
@@ -68,7 +68,7 @@ export async function POST(request) {
     const dateObj = new Date(date)
     if (isNaN(dateObj.getTime())) {
       return NextResponse.json(
-        { error: 'Fecha inválida' },
+        { error: 'Invalid date' },
         { status: 400 }
       )
     }
@@ -90,7 +90,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Error saving calendar:', error)
     return NextResponse.json(
-      { error: 'Error al guardar el calendario' },
+      { error: 'Error saving calendar' },
       { status: 500 }
     )
   }
