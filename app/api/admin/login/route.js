@@ -5,8 +5,13 @@ import jwt from 'jsonwebtoken'
 
 export async function POST(request) {
   if (!prisma) {
+    console.error('Prisma is null. DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET')
     return NextResponse.json(
-      { error: 'Database not configured' },
+      { 
+        error: 'Database not configured',
+        debug: process.env.NODE_ENV,
+        hasDatabaseUrl: !!process.env.DATABASE_URL
+      },
       { status: 503 }
     )
   }
