@@ -19,7 +19,9 @@ export default function AdminClientes() {
 
   const fetchClientes = async () => {
     try {
-      const res = await fetch('/api/admin/clients')
+      const res = await fetch('/api/admin/clients', {
+        credentials: 'include'
+      })
       if (res.ok) {
         const data = await res.json()
         setClientes(data.clients || [])

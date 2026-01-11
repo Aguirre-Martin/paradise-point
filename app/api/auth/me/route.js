@@ -1,27 +1,43 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { cookies } from 'next/headers'
+import { verifyToken } from '@/lib/auth'
 
-export async function GET() {
+export async function GET(request) {
+  if (!prisma) {
+    return NextResponse.json(
+      { error: 'Base de datos no configurada' },
+      { status: 503 }
+    )
+  }
+
   try {
-    const cookieStore = await cookies()
-    const sessionId = cookieStore.get('user_session')?.value
+    const token = request.cookies.get('token')?.value
 
-    if (!sessionId) {
+    if (!token) {
       return NextResponse.json(
         { error: 'No autenticado' },
         { status: 401 }
       )
     }
 
-    const userId = parseInt(sessionId)
+    const decoded = verifyToken(token)
+
+    if (!decoded) {
+      return NextResponse.json(
+        { error: 'Token inválido o expirado' },
+        { status: 401 }
+      )
+    }
 
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: decoded.id },
       select: {
         id: true,
         name: true,
-        email: true
+        email: true,
+        role: true,
+        createdAt: true,
+        lastLogin: true
       }
     })
 
@@ -32,11 +48,12 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json(user)
+    return NextResponse.json({ user })
+
   } catch (error) {
-    console.error('Error in /api/auth/me:', error)
+    console.error('Error verifying user:', error)
     return NextResponse.json(
-      { error: 'Error verifying session' },
+      { error: 'Error verificando autenticación' },
       { status: 500 }
     )
   }

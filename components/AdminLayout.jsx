@@ -27,16 +27,18 @@ export default function AdminLayout({ children }) {
 
   const checkAuth = async () => {
     try {
-      const res = await fetch('/api/admin/me')
+      const res = await fetch('/api/admin/me', {
+        credentials: 'include'
+      })
       if (res.ok) {
         const data = await res.json()
         setAdmin(data.admin)
       } else {
-        router.push('/admin/login')
+        router.push('/login')
       }
     } catch (error) {
       console.error('Error checking auth:', error)
-      router.push('/admin/login')
+      router.push('/login')
     } finally {
       setLoading(false)
     }
@@ -44,8 +46,11 @@ export default function AdminLayout({ children }) {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/admin/logout', { method: 'POST' })
-      router.push('/admin/login')
+      await fetch('/api/auth/logout', { 
+        method: 'POST',
+        credentials: 'include'
+      })
+      router.push('/login')
     } catch (error) {
       console.error('Error logging out:', error)
     }
@@ -220,6 +225,16 @@ export default function AdminLayout({ children }) {
         <main className="flex-1">
           <div className="py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              {/* Quick logout button for mobile/desktop */}
+              <div className="mb-4 flex justify-end">
+                <button
+                  onClick={handleLogout}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <ArrowRightOnRectangleIcon className="h-5 w-5 mr-2 text-gray-400" />
+                  Cerrar Sesión
+                </button>
+              </div>
               {children}
             </div>
           </div>

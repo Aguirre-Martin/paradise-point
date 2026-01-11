@@ -1,8 +1,14 @@
+-- CreateEnum
+CREATE TYPE "DayStatus" AS ENUM ('available', 'inquiry', 'reserved');
+
+-- CreateEnum
+CREATE TYPE "ReservationStatus" AS ENUM ('senado', 'pagado', 'cancelado');
+
 -- CreateTable
 CREATE TABLE "Day" (
     "id" SERIAL NOT NULL,
     "date" TEXT NOT NULL,
-    "status" TEXT NOT NULL,
+    "status" "DayStatus" NOT NULL DEFAULT 'available',
     "note" TEXT,
 
     CONSTRAINT "Day_pkey" PRIMARY KEY ("id")
@@ -43,8 +49,9 @@ CREATE TABLE "Reservation" (
     "clientPhone" TEXT NOT NULL,
     "totalAmount" INTEGER NOT NULL,
     "paidAmount" INTEGER NOT NULL DEFAULT 0,
-    "status" TEXT NOT NULL,
+    "status" "ReservationStatus" NOT NULL DEFAULT 'senado',
     "notes" TEXT,
+    "clientId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -75,3 +82,6 @@ CREATE UNIQUE INDEX "Admin_email_key" ON "Admin"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Client_email_key" ON "Client"("email");
+
+-- AddForeignKey
+ALTER TABLE "Reservation" ADD CONSTRAINT "Reservation_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "Client"("id") ON DELETE CASCADE ON UPDATE CASCADE;

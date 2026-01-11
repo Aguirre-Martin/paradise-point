@@ -1,26 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import jwt from 'jsonwebtoken'
-import { cookies } from 'next/headers'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
-
-// Helper to verify admin
-async function verifyAdmin() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('admin_token')
-
-  if (!token) {
-    return null
-  }
-
-  try {
-    const decoded = jwt.verify(token.value, JWT_SECRET)
-    return decoded
-  } catch (error) {
-    return null
-  }
-}
+import { verifyAdmin } from '@/lib/auth'
 
 // GET all reservations
 export async function GET(request) {
@@ -68,8 +48,16 @@ export async function GET(request) {
 
   } catch (error) {
     console.error('Error fetching reservations:', error)
+    
+    if (error.name === 'PrismaClientKnownRequestError') {
+      return NextResponse.json(
+        { error: 'Database query error. Please try again.' },
+        { status: 500 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Error loading reservations' },
+      { error: 'Failed to load reservations. Please try again.' },
       { status: 500 }
     )
   }
@@ -94,8 +82,11 @@ export async function POST(request) {
       clientName,
       clientEmail,
       clientPhone,
+      clientAddress,
+      clientCuit,
       totalAmount,
       paidAmount,
+      deposit,
       status,
       notes
     } = body
@@ -108,60 +99,121 @@ export async function POST(request) {
       )
     }
 
-    // Create reservation
-    const reservation = await prisma.reservation.create({
-      data: {
-        checkIn: new Date(checkIn),
-        checkOut: new Date(checkOut),
-        clientName,
-        clientEmail,
-        clientPhone,
-        totalAmount: parseInt(totalAmount),
-        paidAmount: parseInt(paidAmount) || 0,
-        status: status || 'señado',
-        notes: notes || ''
-      }
-    })
+    // Validate and set status
+    const validStatuses = ['senado', 'pagado', 'cancelado']
+    const reservationStatus = validStatuses.includes(status) ? status : 'senado'
 
-    // Update calendar days to "reservado"
-    const dates = []
-    const start = new Date(checkIn)
-    const end = new Date(checkOut)
+    // Validate date range
+    const checkInDate = new Date(checkIn)
+    const checkOutDate = new Date(checkOut)
     
-    for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
-      const dateStr = d.toISOString().split('T')[0]
-      dates.push(dateStr)
+    if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
+      return NextResponse.json(
+        { error: 'Invalid date format' },
+        { status: 400 }
+      )
+    }
+    
+    if (checkOutDate <= checkInDate) {
+      return NextResponse.json(
+        { error: 'Check-out date must be after check-in date' },
+        { status: 400 }
+      )
     }
 
-    // Update or create days as reserved
-    for (const date of dates) {
-      await prisma.day.upsert({
-        where: { date },
-        update: { status: 'reservado' },
-        create: { date, status: 'reservado' }
+    // Use transaction to ensure data consistency
+    const result = await prisma.$transaction(async (tx) => {
+      // Create or update client first
+      const client = await tx.client.upsert({
+        where: { email: clientEmail },
+        update: {
+          name: clientName,
+          phone: clientPhone,
+          address: clientAddress || null,
+          cuit: clientCuit || null
+        },
+        create: {
+          email: clientEmail,
+          name: clientName,
+          phone: clientPhone,
+          address: clientAddress || null,
+          cuit: clientCuit || null
+        }
       })
-    }
 
-    // Create or update client
-    await prisma.client.upsert({
-      where: { email: clientEmail },
-      update: {
-        name: clientName,
-        phone: clientPhone
-      },
-      create: {
-        email: clientEmail,
-        name: clientName,
-        phone: clientPhone
+      // Create reservation
+      const reservation = await tx.reservation.create({
+        data: {
+          checkIn: checkInDate,
+          checkOut: checkOutDate,
+          clientName,
+          clientEmail,
+          clientPhone,
+          totalAmount: parseInt(totalAmount),
+          paidAmount: parseInt(paidAmount) || 0,
+          deposit: parseInt(deposit) || 60000,
+          status: reservationStatus,
+          notes: notes || '',
+          clientId: client.id
+        }
+      })
+
+      // Update calendar days to "reservado"
+      const dates = []
+      const start = new Date(checkInDate)
+      const end = new Date(checkOutDate)
+      
+      for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0]
+        dates.push(dateStr)
       }
+
+      // Update or create days as reserved
+      for (const date of dates) {
+        await tx.day.upsert({
+          where: { date },
+          update: { status: 'reserved' },
+          create: { date, status: 'reserved' }
+        })
+      }
+
+      return reservation
     })
 
-    return NextResponse.json({ reservation }, { status: 201 })
+    return NextResponse.json({ reservation: result }, { status: 201 })
 
   } catch (error) {
     console.error('Error creating reservation:', error)
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      name: error.name,
+      meta: error.meta
+    })
+    
+    if (error.code === 'P2002') {
+      return NextResponse.json(
+        { error: 'A reservation with this information already exists' },
+        { status: 409 }
+      )
+    }
+    
+    if (error.code === 'P2003') {
+      return NextResponse.json(
+        { error: 'Invalid client reference' },
+        { status: 400 }
+      )
+    }
+    
+    if (error.name === 'PrismaClientValidationError') {
+      return NextResponse.json(
+        { error: `Invalid reservation data: ${error.message}` },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Error creating reservation' },
+      { error: `Failed to create reservation: ${error.message}` },
       { status: 500 }
     )
   }

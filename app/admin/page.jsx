@@ -7,18 +7,20 @@ export default function AdminPage() {
 
   useEffect(() => {
     // Check if user is authenticated
-    fetch('/api/admin/me')
+    fetch('/api/admin/me', {
+      credentials: 'include'
+    })
       .then(res => {
         if (res.ok) {
           // Redirect to dashboard if authenticated
           router.push('/admin/dashboard')
         } else {
           // Redirect to login if not authenticated
-          router.push('/admin/login')
+          router.push('/login')
         }
       })
       .catch(() => {
-        router.push('/admin/login')
+        router.push('/login')
       })
   }, [router])
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import jwt from 'jsonwebtoken'
+import { verifyToken } from '@/lib/auth'
 
 export async function GET(request) {
   if (!prisma) {
@@ -11,7 +11,7 @@ export async function GET(request) {
   }
 
   try {
-    const token = request.cookies.get('admin_token')?.value
+    const token = request.cookies.get('token')?.value
 
     if (!token) {
       return NextResponse.json(
@@ -20,24 +20,22 @@ export async function GET(request) {
       )
     }
 
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || 'default-secret-change-in-production'
-    )
+    const decoded = verifyToken(token)
 
-    if (decoded.role !== 'admin') {
+    if (!decoded || decoded.role !== 'admin') {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 403 }
       )
     }
 
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma.user.findUnique({
       where: { id: decoded.id },
       select: {
         id: true,
         name: true,
         email: true,
+        role: true,
         createdAt: true,
         lastLogin: true
       }
@@ -45,7 +43,7 @@ export async function GET(request) {
 
     if (!admin) {
       return NextResponse.json(
-        { error: 'Administrador no encontrado' },
+        { error: 'Usuario no encontrado' },
         { status: 404 }
       )
     }
@@ -53,16 +51,9 @@ export async function GET(request) {
     return NextResponse.json({ admin })
 
   } catch (error) {
-    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
-        { status: 401 }
-      )
-    }
-
     console.error('Error verifying admin:', error)
     return NextResponse.json(
-      { error: 'Error verifying authentication' },
+      { error: 'Error verificando autenticación' },
       { status: 500 }
     )
   }

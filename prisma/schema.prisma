@@ -7,10 +7,32 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum DayStatus {
+  available
+  inquiry
+  reserved
+}
+
+enum ReservationStatus {
+  senado
+  pagado
+  cancelado
+}
+
+enum UserRole {
+  admin
+  user
+}
+
+enum PaymentMethod {
+  EFECTIVO
+  TRANSFERENCIA
+}
+
 model Day {
-  id     Int    @id @default(autoincrement())
-  date   String @unique
-  status String
+  id     Int       @id @default(autoincrement())
+  date   String    @unique
+  status DayStatus @default(available)
   note   String?
 }
 
@@ -19,42 +41,56 @@ model User {
   email     String   @unique
   name      String
   password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Admin {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String
-  password  String
+  role      UserRole @default(user)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   lastLogin DateTime?
 }
 
 model Reservation {
-  id          String   @id @default(uuid())
+  id          String            @id @default(uuid())
   checkIn     DateTime
   checkOut    DateTime
   clientName  String
   clientEmail String
   clientPhone String
   totalAmount Int
-  paidAmount  Int      @default(0)
-  status      String   // "señado", "pagado", "cancelado" (deposit paid, fully paid, cancelled)
+  paidAmount  Int               @default(0)
+  deposit     Int               @default(60000)
+  status      ReservationStatus @default(senado)
   notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  clientId    String
+  client      Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  payments    Payment[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  amount        Int
+  concept       String
+  method        PaymentMethod
+  recipient     String
+  proofFileName String?
+  paymentDate   DateTime      @default(now())
+  notes         String?
+  reservationId String
+  reservation   Reservation   @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
 model Client {
-  id          String   @id @default(uuid())
-  name        String
-  email       String   @unique
-  phone       String
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  phone        String
+  address      String?
+  cuit         String?
+  notes        String?
+  reservations Reservation[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 

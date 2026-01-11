@@ -36,36 +36,22 @@ function LoginForm() {
     }
 
     try {
-      // Try admin login first
-      let res = await fetch('/api/admin/login', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
         credentials: 'include'
       })
 
-      let data = await res.json()
+      const data = await res.json()
 
       if (res.ok) {
-        // Admin login successful
-        router.push('/admin')
-        router.refresh()
-        return
-      }
-
-      // If admin login fails, try regular user login
-      res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-        credentials: 'include'
-      })
-
-      data = await res.json()
-
-      if (res.ok) {
-        // Regular user login successful
-        router.push('/')
+        // Redirect based on user role
+        if (data.user.role === 'admin') {
+          router.push('/admin')
+        } else {
+          router.push('/')
+        }
         router.refresh()
       } else {
         setError(data.error || 'Email o contraseña incorrectos')

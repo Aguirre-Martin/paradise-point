@@ -89,8 +89,16 @@ export async function POST(request) {
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('Error saving calendar:', error)
+    
+    if (error.name === 'PrismaClientValidationError') {
+      return NextResponse.json(
+        { error: 'Invalid calendar data provided' },
+        { status: 400 }
+      )
+    }
+    
     return NextResponse.json(
-      { error: 'Error saving calendar' },
+      { error: 'Failed to save calendar. Please try again.' },
       { status: 500 }
     )
   }

@@ -9,6 +9,12 @@ export default function Calendar({ data = {}, editable = false, onDayChange, onN
   const [noteInput, setNoteInput] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState(null)
+  const [localData, setLocalData] = useState(data)
+  
+  // Update local data when prop changes
+  useEffect(() => {
+    setLocalData(data)
+  }, [data])
 
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
@@ -47,11 +53,21 @@ export default function Calendar({ data = {}, editable = false, onDayChange, onN
   const handleDayClick = async (date) => {
     if (!editable || saving) return
 
-    const currentStatus = data[date]?.status || 'available'
+    const currentStatus = localData[date]?.status || 'available'
     const nextStatus = cycleStatus(currentStatus)
+
+    // Optimistic update
+    setLocalData(prev => ({
+      ...prev,
+      [date]: {
+        ...prev[date],
+        status: nextStatus
+      }
+    }))
 
     setSaving(true)
     setSaveStatus(null)
+    
     try {
       const response = await fetch('/api/calendar', {
         method: 'POST',
@@ -59,7 +75,7 @@ export default function Calendar({ data = {}, editable = false, onDayChange, onN
         body: JSON.stringify({
           date,
           status: nextStatus,
-          note: data[date]?.note || ''
+          note: localData[date]?.note || ''
         })
       })
 
@@ -68,15 +84,30 @@ export default function Calendar({ data = {}, editable = false, onDayChange, onN
         if (onDayChange) {
           onDayChange(date, nextStatus)
         }
-        setTimeout(() => {
-          window.location.reload()
-        }, 300)
       } else {
+        const errorData = await response.json().catch(() => ({}))
         setSaveStatus('error')
+        // Revert optimistic update on error
+        setLocalData(prev => ({
+          ...prev,
+          [date]: {
+            ...prev[date],
+            status: currentStatus
+          }
+        }))
+        console.error('Error updating day:', errorData.error || 'Unknown error')
       }
     } catch (error) {
       console.error('Error updating day:', error)
       setSaveStatus('error')
+      // Revert optimistic update on error
+      setLocalData(prev => ({
+        ...prev,
+        [date]: {
+          ...prev[date],
+          status: currentStatus
+        }
+      }))
     } finally {
       setSaving(false)
       setTimeout(() => setSaveStatus(null), 2000)
@@ -86,21 +117,33 @@ export default function Calendar({ data = {}, editable = false, onDayChange, onN
   const handleNoteClick = (date) => {
     if (!editable) return
     setSelectedDate(date)
-    setNoteInput(data[date]?.note || '')
+    setNoteInput(localData[date]?.note || '')
   }
 
   const handleNoteSave = async () => {
     if (!selectedDate || saving) return
 
+    const previousNote = localData[selectedDate]?.note || ''
+
+    // Optimistic update
+    setLocalData(prev => ({
+      ...prev,
+      [selectedDate]: {
+        ...prev[selectedDate],
+        note: noteInput
+      }
+    }))
+
     setSaving(true)
     setSaveStatus(null)
+    
     try {
       const response = await fetch('/api/calendar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date: selectedDate,
-          status: data[selectedDate]?.status || 'available',
+          status: localData[selectedDate]?.status || 'available',
           note: noteInput
         })
       })
@@ -112,15 +155,30 @@ export default function Calendar({ data = {}, editable = false, onDayChange, onN
         }
         setSelectedDate(null)
         setNoteInput('')
-        setTimeout(() => {
-          window.location.reload()
-        }, 300)
       } else {
+        const errorData = await response.json().catch(() => ({}))
         setSaveStatus('error')
+        // Revert optimistic update on error
+        setLocalData(prev => ({
+          ...prev,
+          [selectedDate]: {
+            ...prev[selectedDate],
+            note: previousNote
+          }
+        }))
+        console.error('Error saving note:', errorData.error || 'Unknown error')
       }
     } catch (error) {
       console.error('Error saving note:', error)
       setSaveStatus('error')
+      // Revert optimistic update on error
+      setLocalData(prev => ({
+        ...prev,
+        [selectedDate]: {
+          ...prev[selectedDate],
+          note: previousNote
+        }
+      }))
     } finally {
       setSaving(false)
       setTimeout(() => setSaveStatus(null), 2000)
@@ -178,7 +236,7 @@ export default function Calendar({ data = {}, editable = false, onDayChange, onN
           }
 
           const date = formatDate(day)
-          const dayData = data[date] || { status: 'available', note: '' }
+          const dayData = localData[date] || { status: 'available', note: '' }
 
           return (
             <DayCell
