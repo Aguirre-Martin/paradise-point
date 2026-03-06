@@ -22,7 +22,7 @@ export default function AdminClientes() {
       const res = await fetch('/api/admin/clients')
       if (res.ok) {
         const data = await res.json()
-        setClientes(data.clients || [])
+        setClientes(data.users || [])
       }
     } catch (error) {
       console.error('Error fetching clients:', error)
@@ -85,6 +85,7 @@ export default function AdminClientes() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reservas</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notas</th>
                   </tr>
                 </thead>
@@ -106,6 +107,11 @@ export default function AdminClientes() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{cliente.phone}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {cliente._count.reservations}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-500">{cliente.notes || '-'}</div>

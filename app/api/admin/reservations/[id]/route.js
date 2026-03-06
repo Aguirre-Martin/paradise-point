@@ -1,26 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import jwt from 'jsonwebtoken'
-import { cookies } from 'next/headers'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
-
-// Helper to verify admin
-async function verifyAdmin() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('admin_token')
-
-  if (!token) {
-    return null
-  }
-
-  try {
-    const decoded = jwt.verify(token.value, JWT_SECRET)
-    return decoded
-  } catch (error) {
-    return null
-  }
-}
+import { verifyAdmin } from '@/lib/auth'
 
 // PUT update reservation
 export async function PUT(request, { params }) {
@@ -57,7 +37,7 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: 'Reservation not found' }, { status: 404 })
     }
 
-    // Clear old dates (set to disponible if no other reservation overlaps)
+    // Clear old dates (set to available if no other reservation overlaps)
     const oldDates = []
     const oldStart = new Date(oldReservation.checkIn)
     const oldEnd = new Date(oldReservation.checkOut)
@@ -81,10 +61,17 @@ export async function PUT(request, { params }) {
       if (otherReservations === 0) {
         await prisma.day.updateMany({
           where: { date },
-          data: { status: 'disponible' }
+          data: { status: 'available' }
         })
       }
     }
+
+    // Find or create user
+    const user = await prisma.user.upsert({
+      where: { email: clientEmail },
+      update: { name: clientName, phone: clientPhone },
+      create: { email: clientEmail, name: clientName, phone: clientPhone }
+    })
 
     // Update reservation
     const reservation = await prisma.reservation.update({
@@ -92,14 +79,13 @@ export async function PUT(request, { params }) {
       data: {
         checkIn: new Date(checkIn),
         checkOut: new Date(checkOut),
-        clientName,
-        clientEmail,
-        clientPhone,
+        userId: user.id,
         totalAmount: parseInt(totalAmount),
         paidAmount: parseInt(paidAmount),
         status,
         notes: notes || ''
-      }
+      },
+      include: { user: true }
     })
 
     // Update calendar with new dates
@@ -116,25 +102,11 @@ export async function PUT(request, { params }) {
       for (const date of newDates) {
         await prisma.day.upsert({
           where: { date },
-          update: { status: 'reservado' },
-          create: { date, status: 'reservado' }
+          update: { status: 'reserved' },
+          create: { date, status: 'reserved' }
         })
       }
     }
-
-    // Update client
-    await prisma.client.upsert({
-      where: { email: clientEmail },
-      update: {
-        name: clientName,
-        phone: clientPhone
-      },
-      create: {
-        email: clientEmail,
-        name: clientName,
-        phone: clientPhone
-      }
-    })
 
     return NextResponse.json({ reservation })
 
@@ -193,7 +165,7 @@ export async function DELETE(request, { params }) {
       if (otherReservations === 0) {
         await prisma.day.updateMany({
           where: { date },
-          data: { status: 'disponible' }
+          data: { status: 'available' }
         })
       }
     }

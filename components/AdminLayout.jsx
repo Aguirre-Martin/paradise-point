@@ -27,10 +27,14 @@ export default function AdminLayout({ children }) {
 
   const checkAuth = async () => {
     try {
-      const res = await fetch('/api/admin/me')
+      const res = await fetch('/api/auth/me')
       if (res.ok) {
         const data = await res.json()
-        setAdmin(data.admin)
+        if (data.user.role !== 'admin') {
+          router.push('/admin/login')
+          return
+        }
+        setAdmin(data.user)
       } else {
         router.push('/admin/login')
       }
@@ -44,7 +48,7 @@ export default function AdminLayout({ children }) {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/admin/logout', { method: 'POST' })
+      await fetch('/api/auth/logout', { method: 'POST' })
       router.push('/admin/login')
     } catch (error) {
       console.error('Error logging out:', error)

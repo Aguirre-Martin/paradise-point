@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { verifyAdmin } from '@/lib/auth'
 
 const VALID_STATUSES = ['available', 'inquiry', 'reserved']
 
@@ -38,7 +39,12 @@ export async function POST(request) {
       { status: 503 }
     )
   }
-  
+
+  const admin = await verifyAdmin()
+  if (!admin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const body = await request.json()
     const { date, status, note } = body

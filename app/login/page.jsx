@@ -1,139 +1,102 @@
 'use client'
-
-import { useState, useEffect, Suspense } from 'react'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 
-function LoginForm() {
+export default function LoginPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  })
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
-  useEffect(() => {
-    if (searchParams?.get('registered') === 'true') {
-      setSuccess('¡Registro exitoso! Ahora podés iniciar sesión.')
-    }
-  }, [searchParams])
-
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
     setError('')
-    setSuccess('')
     setLoading(true)
 
-    if (!formData.email || !formData.password) {
-      setError('Email y contraseña son obligatorios')
-      setLoading(false)
-      return
-    }
-
     try {
-      // Try admin login first
-      let res = await fetch('/api/admin/login', {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ email, password }),
         credentials: 'include'
       })
 
-      let data = await res.json()
+      const data = await res.json()
 
       if (res.ok) {
-        // Admin login successful
-        router.push('/admin')
-        router.refresh()
-        return
-      }
-
-      // If admin login fails, try regular user login
-      res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-        credentials: 'include'
-      })
-
-      data = await res.json()
-
-      if (res.ok) {
-        // Regular user login successful
-        router.push('/')
+        if (data.user.role === 'admin') {
+          router.push('/admin')
+        } else {
+          router.push('/perfil')
+        }
         router.refresh()
       } else {
-        setError(data.error || 'Email o contraseña incorrectos')
+        setError(data.error || 'Error al iniciar sesión')
       }
-    } catch (error) {
-      setError('Ocurrió un error. Por favor intentá nuevamente.')
+    } catch (err) {
+      console.error('Login error:', err)
+      setError('Error de conexión')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">
-            Iniciar Sesión
-          </h1>
-          <p className="text-gray-600 text-center mb-8">
-            Ingresá a tu cuenta
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <svg className="w-16 h-16 text-red-500 mx-auto" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+          <h2 className="mt-6 text-3xl font-bold text-white">Iniciar Sesión</h2>
+          <p className="mt-2 text-sm text-gray-400">Paradise Point</p>
+        </div>
 
-          {success && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-              {success}
-            </div>
-          )}
-
+        <form className="mt-8 space-y-6 bg-white rounded-lg shadow-xl p-8" onSubmit={handleLogin}>
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email
               </label>
               <input
-                type="email"
                 id="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
-                placeholder="tu@email.com"
+                type="email"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
+                placeholder="tu@email.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Contraseña
               </label>
               <div className="relative">
                 <input
-                  type={showPassword ? 'text' : 'password'}
                   id="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
-                  placeholder="••••••••"
+                  type={showPassword ? 'text' : 'password'}
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1 block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
+                  placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 mt-1"
                 >
                   {showPassword ? (
                     <EyeSlashIcon className="h-5 w-5" />
@@ -143,37 +106,24 @@ function LoginForm() {
                 </button>
               </div>
             </div>
+          </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-            </button>
-          </form>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+          </button>
 
-          <p className="mt-6 text-center text-sm text-gray-600">
-            ¿No tenés una cuenta?{' '}
-            <Link href="/registro" className="text-blue-600 hover:text-blue-800 font-medium">
+          <p className="text-center text-sm text-gray-600">
+            ¿No tenés cuenta?{' '}
+            <Link href="/registro" className="text-blue-600 hover:text-blue-500 font-medium">
               Registrate
             </Link>
           </p>
-        </div>
+        </form>
       </div>
     </div>
   )
 }
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center">
-        <div className="text-gray-600">Cargando...</div>
-      </div>
-    }>
-      <LoginForm />
-    </Suspense>
-  )
-}
-

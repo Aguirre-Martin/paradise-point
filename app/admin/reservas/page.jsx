@@ -60,9 +60,9 @@ export default function AdminReservas() {
 
     const term = searchTerm.toLowerCase()
     const filtered = reservas.filter(r => 
-      r.clientName.toLowerCase().includes(term) ||
-      r.clientEmail.toLowerCase().includes(term) ||
-      r.clientPhone.includes(term)
+      r.user.name.toLowerCase().includes(term) ||
+      r.user.email.toLowerCase().includes(term) ||
+      (r.user.phone || '').includes(term)
     )
     setFilteredReservas(filtered)
   }
@@ -127,9 +127,9 @@ export default function AdminReservas() {
       setFormData({
         checkIn: reserva.checkIn.split('T')[0],
         checkOut: reserva.checkOut.split('T')[0],
-        clientName: reserva.clientName,
-        clientEmail: reserva.clientEmail,
-        clientPhone: reserva.clientPhone,
+        clientName: reserva.user.name,
+        clientEmail: reserva.user.email,
+        clientPhone: reserva.user.phone || '',
         totalAmount: reserva.totalAmount.toString(),
         paidAmount: reserva.paidAmount.toString(),
         status: reserva.status,
@@ -258,9 +258,9 @@ export default function AdminReservas() {
                     <tr key={reserva.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div>
-                          <div className="font-medium text-gray-900">{reserva.clientName}</div>
-                          <div className="text-sm text-gray-500">{reserva.clientEmail}</div>
-                          <div className="text-sm text-gray-500">{reserva.clientPhone}</div>
+                          <div className="font-medium text-gray-900">{reserva.user.name}</div>
+                          <div className="text-sm text-gray-500">{reserva.user.email}</div>
+                          <div className="text-sm text-gray-500">{reserva.user.phone}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

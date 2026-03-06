@@ -7,33 +7,28 @@ import { SITE_CONFIG } from '@/lib/config'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [userName, setUserName] = useState('')
+  const [user, setUser] = useState(null)
   const pathname = usePathname()
 
   useEffect(() => {
-    // Verificar si el usuario está autenticado
+    setIsOpen(false)
+  }, [pathname])
+
+  useEffect(() => {
     const checkAuth = async () => {
       try {
         const res = await fetch('/api/auth/me')
         if (res.ok) {
           const data = await res.json()
-          setIsAuthenticated(true)
-          setUserName(data.name || '')
+          setUser(data.user)
         }
-      } catch (error) {
-        setIsAuthenticated(false)
+      } catch {
+        // Not logged in
       }
     }
     checkAuth()
-  }, [pathname])
+  }, [])
 
-  // Cerrar menú cuando cambia la ruta
-  useEffect(() => {
-    setIsOpen(false)
-  }, [pathname])
-
-  // Cerrar menú al hacer scroll en mobile
   useEffect(() => {
     const handleScroll = () => {
       if (isOpen) {
@@ -114,41 +109,28 @@ export default function Navbar() {
                 </Link>
               )
             })}
-            
-            {/* Auth Buttons */}
-            <div className="ml-4 flex items-center gap-2 border-l border-white/30 pl-4">
-              {isAuthenticated ? (
-                <>
-                  <span className="text-sm text-white">Hola, {userName}</span>
-                  <button
-                    onClick={async () => {
-                      await fetch('/api/auth/logout', { method: 'POST' })
-                      setIsAuthenticated(false)
-                      setUserName('')
-                      window.location.href = '/'
-                    }}
-                    className="px-4 py-2 text-sm font-medium transition-colors text-white/90 hover:text-white hover:bg-white/20"
-                  >
-                    Cerrar Sesión
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="px-4 py-2 text-sm font-medium text-white hover:text-blue-300 transition-colors"
-                  >
-                    Iniciar Sesión
-                  </Link>
-                  <Link
-                    href="/registro"
-                    className="px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    Registrarse
-                  </Link>
-                </>
-              )}
-            </div>
+          </div>
+
+          {/* Desktop auth */}
+          <div className="hidden md:flex items-center ml-4 border-l border-white/30 pl-4">
+            {user ? (
+              <Link
+                href={user.role === 'admin' ? '/admin' : '/perfil'}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white/90 hover:bg-white/20 hover:text-white transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {user.name}
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-white/90 hover:bg-white/20 hover:text-white transition-colors"
+              >
+                Iniciar Sesión
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -190,37 +172,25 @@ export default function Navbar() {
                 {item.label}
               </Link>
             ))}
-            
-            {/* Mobile Auth Buttons */}
             <div className="border-t border-white/30 mt-2 pt-2">
-              {isAuthenticated ? (
-                <>
-                  <div className="px-4 py-2 text-sm text-white">
-                    Hola, {userName}
-                  </div>
-                  <button
-                    onClick={async () => {
-                      await fetch('/api/auth/logout', { method: 'POST' })
-                      setIsAuthenticated(false)
-                      setUserName('')
-                      window.location.href = '/'
-                    }}
-                    className="block w-full text-left px-4 py-3 rounded-lg text-base font-medium transition-colors text-white/90 hover:bg-white/20 hover:text-white"
-                  >
-                    Cerrar Sesión
-                  </button>
-                </>
+              {user ? (
+                <Link
+                  href={user.role === 'admin' ? '/admin' : '/perfil'}
+                  className="block px-4 py-3 rounded-lg text-base font-medium text-white/90 hover:bg-white/20 hover:text-white transition-colors"
+                >
+                  Mi Cuenta
+                </Link>
               ) : (
                 <>
                   <Link
                     href="/login"
-                    className="block px-4 py-3 text-base font-medium text-white hover:text-blue-300 transition-colors"
+                    className="block px-4 py-3 rounded-lg text-base font-medium text-white/90 hover:bg-white/20 hover:text-white transition-colors"
                   >
                     Iniciar Sesión
                   </Link>
                   <Link
                     href="/registro"
-                    className="block px-4 py-3 rounded-lg text-base font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700"
+                    className="block px-4 py-3 rounded-lg text-base font-medium text-white/90 hover:bg-white/20 hover:text-white transition-colors"
                   >
                     Registrarse
                   </Link>
@@ -233,4 +203,3 @@ export default function Navbar() {
     </nav>
   )
 }
-

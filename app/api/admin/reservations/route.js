@@ -1,26 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import jwt from 'jsonwebtoken'
-import { cookies } from 'next/headers'
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production'
-
-// Helper to verify admin
-async function verifyAdmin() {
-  const cookieStore = await cookies()
-  const token = cookieStore.get('admin_token')
-
-  if (!token) {
-    return null
-  }
-
-  try {
-    const decoded = jwt.verify(token.value, JWT_SECRET)
-    return decoded
-  } catch (error) {
-    return null
-  }
-}
+import { verifyAdmin } from '@/lib/auth'
 
 // GET all reservations
 export async function GET(request) {
@@ -49,7 +29,8 @@ export async function GET(request) {
         },
         orderBy: {
           checkIn: 'asc'
-        }
+        },
+        include: { user: true }
       })
     } else {
       reservations = await prisma.reservation.findMany({
@@ -60,7 +41,8 @@ export async function GET(request) {
         },
         orderBy: {
           checkIn: 'desc'
-        }
+        },
+        include: { user: true }
       })
     }
 
@@ -108,22 +90,28 @@ export async function POST(request) {
       )
     }
 
-    // Create reservation
+    // Find or create user
+    const user = await prisma.user.upsert({
+      where: { email: clientEmail },
+      update: { name: clientName, phone: clientPhone },
+      create: { email: clientEmail, name: clientName, phone: clientPhone }
+    })
+
+    // Create reservation linked to user
     const reservation = await prisma.reservation.create({
       data: {
         checkIn: new Date(checkIn),
         checkOut: new Date(checkOut),
-        clientName,
-        clientEmail,
-        clientPhone,
+        userId: user.id,
         totalAmount: parseInt(totalAmount),
         paidAmount: parseInt(paidAmount) || 0,
         status: status || 'señado',
         notes: notes || ''
-      }
+      },
+      include: { user: true }
     })
 
-    // Update calendar days to "reservado"
+    // Mark calendar days as reserved
     const dates = []
     const start = new Date(checkIn)
     const end = new Date(checkOut)
@@ -133,28 +121,13 @@ export async function POST(request) {
       dates.push(dateStr)
     }
 
-    // Update or create days as reserved
     for (const date of dates) {
       await prisma.day.upsert({
         where: { date },
-        update: { status: 'reservado' },
-        create: { date, status: 'reservado' }
+        update: { status: 'reserved' },
+        create: { date, status: 'reserved' }
       })
     }
-
-    // Create or update client
-    await prisma.client.upsert({
-      where: { email: clientEmail },
-      update: {
-        name: clientName,
-        phone: clientPhone
-      },
-      create: {
-        email: clientEmail,
-        name: clientName,
-        phone: clientPhone
-      }
-    })
 
     return NextResponse.json({ reservation }, { status: 201 })
 

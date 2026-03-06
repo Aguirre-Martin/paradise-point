@@ -152,7 +152,7 @@ export default function AdminDashboard() {
                 {metrics.proximasReservas.slice(0, 5).map((reserva) => (
                   <div key={reserva.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900">{reserva.clientName}</p>
+                      <p className="font-medium text-gray-900">{reserva.user.name}</p>
                       <p className="text-sm text-gray-600">
                         {formatDate(reserva.checkIn)} - {formatDate(reserva.checkOut)}
                       </p>
