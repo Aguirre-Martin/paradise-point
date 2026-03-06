@@ -4,6 +4,14 @@ import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 
 export async function POST(request) {
+  if (!prisma) {
+    console.error('Prisma is null. DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET')
+    return NextResponse.json(
+      { error: 'Database not configured' },
+      { status: 503 }
+    )
+  }
+
   try {
     const body = await request.json()
     const { email, password } = body
