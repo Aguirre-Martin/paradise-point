@@ -7,7 +7,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     // Check if user is authenticated
-    fetch('/api/admin/me')
+    fetch('/api/auth/me')
       .then(res => {
         if (res.ok) {
           // Redirect to dashboard if authenticated
