@@ -3,57 +3,16 @@ import Link from 'next/link'
 import { SITE_CONFIG } from '@/lib/config'
 
 export default function GaleriaPage() {
-  // Organización de imágenes por ambiente
-  // Actualizar cuando tengas las fotos
-  const ambientes = [
-    {
-      nombre: 'Exterior',
-      descripcion: 'Espacios al aire libre y jardín',
-      imagenes: [
-        '/images/pile-casa.jpg',
-        '/images/luces.jpg',
-        // Agregar más imágenes de exterior
-      ]
-    },
-    {
-      nombre: 'Cocina',
-      descripcion: 'Cocina completamente equipada',
-      imagenes: [
-        '/images/comodidades/cocina.jpg',
-        // Agregar más imágenes de cocina
-      ]
-    },
-    {
-      nombre: 'Habitaciones',
-      descripcion: 'Dormitorios cómodos y espaciosos',
-      imagenes: [
-        '/images/comodidades/habitacion.jpg',
-        // Agregar más imágenes de habitaciones
-      ]
-    },
-    {
-      nombre: 'Living',
-      descripcion: 'Espacios de relax y entretenimiento',
-      imagenes: [
-        '/images/detalles.jpg',
-        // Agregar más imágenes de living
-      ]
-    },
-    {
-      nombre: 'Baños',
-      descripcion: 'Baños completos y modernos',
-      imagenes: [
-        // Agregar imágenes de baños
-      ]
-    },
-    {
-      nombre: 'Parrilla',
-      descripcion: 'Área de asado y reuniones',
-      imagenes: [
-        // Agregar imágenes de parrilla
-      ]
-    }
-  ]
+  const ambientes = Object.entries(SITE_CONFIG.amenitiesImages)
+    .filter(([, imgs]) => Array.isArray(imgs) && imgs.length > 0)
+    .map(([key, imagenes]) => {
+      const meta = SITE_CONFIG.amenityMeta[key]
+      return {
+        nombre: meta?.nombre ?? key,
+        descripcion: meta?.descripcion ?? '',
+        imagenes,
+      }
+    })
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">

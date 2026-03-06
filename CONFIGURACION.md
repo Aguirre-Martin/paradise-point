@@ -48,10 +48,12 @@ Poné tus imágenes en estas carpetas:
   - `public/images/gallery-3.jpg`
   - etc...
 
-- **Comodidades (opcional):**
+- **Comodidades (hero, galería de comodidades):** Las rutas se configuran en `lib/config.js` → `amenitiesImages`. Subí el archivo y poné la ruta:
   - `public/images/comodidades/cocina.jpg`
   - `public/images/comodidades/habitacion.jpg`
-  - etc...
+  - `public/images/comodidades/parrillero.jpg`
+  - `public/images/comodidades/fogonero.jpg`
+  - etc. Las que tengan `null` en config no se muestran.
 
 ### Paso 3: Actualizar la configuración
 En `lib/config.js`, actualizá el array `galleryImages`:
