@@ -1,7 +1,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { SITE_CONFIG } from '@/lib/config'
 
 export default function ComodidadesPage() {
+  const galleryItems = Object.entries(SITE_CONFIG.amenitiesImages)
+    .filter(([, imgs]) => Array.isArray(imgs) && imgs.length > 0)
+    .map(([key, imgs]) => [key, imgs[0]])
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -105,30 +109,27 @@ export default function ComodidadesPage() {
             </div>
           </div>
 
-          {/* Sección para imágenes - cuando las tengas */}
           <div className="mt-12">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
               Galería de Comodidades
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Cuando tengas imágenes, reemplazá estos divs con: */}
-              {/* <div className="relative h-64 rounded-xl overflow-hidden shadow-lg">
-                <Image 
-                  src="/images/comodidades/cocina.jpg" 
-                  alt="Cocina"
-                  fill
-                  className="object-cover"
-                />
-              </div> */}
-              <div className="relative h-64 rounded-xl overflow-hidden shadow-lg bg-gradient-to-br from-blue-200 to-teal-200 flex items-center justify-center">
-                <span className="text-gray-500">Imagen de comodidad 1</span>
-              </div>
-              <div className="relative h-64 rounded-xl overflow-hidden shadow-lg bg-gradient-to-br from-blue-200 to-teal-200 flex items-center justify-center">
-                <span className="text-gray-500">Imagen de comodidad 2</span>
-              </div>
-              <div className="relative h-64 rounded-xl overflow-hidden shadow-lg bg-gradient-to-br from-blue-200 to-teal-200 flex items-center justify-center">
-                <span className="text-gray-500">Imagen de comodidad 3</span>
-              </div>
+              {galleryItems.length > 0 ? (
+                galleryItems.map(([key, src]) => (
+                  <div key={key} className="relative h-64 rounded-xl overflow-hidden shadow-lg">
+                    <Image
+                      src={src}
+                      alt={SITE_CONFIG.amenityMeta[key]?.nombre ?? key}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="relative h-64 rounded-xl overflow-hidden shadow-lg bg-gradient-to-br from-blue-200 to-teal-200 flex items-center justify-center col-span-full">
+                  <span className="text-gray-500">Agregá imágenes en lib/config.js (amenitiesImages, arrays) y archivos en public/images/comodidades/</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
