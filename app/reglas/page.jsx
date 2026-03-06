@@ -150,7 +150,7 @@ export default function ReglasPage() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-sky-500 mt-1">•</span>
-                    <span>La propiedad cuenta con vajilla completa para 10 personas y 5 plazas para dormir</span>
+                    <span>La propiedad cuenta con vajilla completa para 10 personas y 7 plazas para dormir</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-sky-500 mt-1">•</span>

@@ -64,8 +64,8 @@ export default function ComodidadesPage() {
                   <path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Parrillero</h3>
-              <p className="text-gray-600">Área de asador</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Parrilla</h3>
+              <p className="text-gray-600">Área de asado y reuniones</p>
             </div>
 
             <div className="text-center">
@@ -74,8 +74,8 @@ export default function ComodidadesPage() {
                   <path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Fogonero</h3>
-              <p className="text-gray-600">Espacio para cocinar a la estaca</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Fogonero a la estaca</h3>
+              <p className="text-gray-600">Cruz para cocinar a la estaca o hacer tu fogón</p>
             </div>
 
             <div className="text-center">
@@ -84,7 +84,7 @@ export default function ComodidadesPage() {
                   <path d="M20 9.557V4h-2v2H6V4H4v5.557C2.81 10.25 2 11.525 2 13v4a1 1 0 0 0 1 1h1v4h2v-4h12v4h2v-4h1a1 1 0 0 0 1-1v-4c0-1.475-.81-2.75-2-3.443zM18 7v1a3 3 0 0 1-3 3h-2a3 3 0 0 1-3-3V7h8z"/>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">5 Plazas para Dormir</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">7 Plazas para Dormir</h3>
               <p className="text-gray-600">Capacidad para toda la familia</p>
             </div>
 

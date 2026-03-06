@@ -61,6 +61,21 @@ export default async function Home() {
               ))
             )}
           </div>
+          {SITE_CONFIG.galleryImagesNight?.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                {SITE_CONFIG.galleryImagesNight.map((img, i) => (
+                  <Link key={i} href="/galeria" className="relative h-64 rounded-xl overflow-hidden shadow-lg group">
+                    <Image
+                      src={img}
+                      alt={`Imagen de noche ${i + 1}`}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                  </Link>
+                ))}
+            </div>
+          )}
         </section>
 
         {/* Comodidades, Precios y Reglas */}
@@ -81,7 +96,7 @@ export default async function Home() {
               </li>
               <li className="flex items-center gap-3">
                 <span className="text-green-500 text-xl">✓</span>
-                <span>Cinco plazas para dormir</span>
+                <span>Siete plazas para dormir</span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="text-green-500 text-xl">✓</span>
@@ -97,7 +112,7 @@ export default async function Home() {
               </li>
               <li className="flex items-center gap-3">
                 <span className="text-green-500 text-xl">✓</span>
-                <span>Parrilla</span>
+                <span>Parrilla y fogonero a la estaca</span>
               </li>
               <li className="flex items-center gap-3">
                 <span className="text-green-500 text-xl">✓</span>
