@@ -138,13 +138,13 @@ export default async function Home() {
                 <div className="text-sm text-gray-600 mb-1">Sábado y Domingo</div>
                 <div className="text-2xl font-bold text-gray-900">${PRICES.weekend.toLocaleString('es-AR')} ARS</div>
               </div>
-              <div className="border-l-4 border-teal-500 pl-4 py-2">
-                <div className="text-sm text-gray-600 mb-1">Martes a Viernes</div>
-                <div className="text-2xl font-bold text-gray-900">${PRICES.tuesdayToFriday.toLocaleString('es-AR')} ARS</div>
-              </div>
               <div className="border-l-4 border-purple-500 pl-4 py-2">
-                <div className="text-sm text-gray-600 mb-1">Martes a Domingo</div>
-                <div className="text-2xl font-bold text-gray-900">${PRICES.tuesdayToSunday.toLocaleString('es-AR')} ARS</div>
+                <div className="text-sm text-gray-600 mb-1">Lunes a Viernes (5 días)</div>
+                <div className="text-2xl font-bold text-gray-900">${PRICES.mondayToFriday.toLocaleString('es-AR')} ARS</div>
+              </div>
+              <div className="border-l-4 border-indigo-500 pl-4 py-2">
+                <div className="text-sm text-gray-600 mb-1">Lunes a Domingo (7 días)</div>
+                <div className="text-2xl font-bold text-gray-900">${PRICES.mondayToSunday.toLocaleString('es-AR')} ARS</div>
               </div>
             </div>
             <div className="mt-4 text-teal-600 font-medium group-hover:text-teal-800">

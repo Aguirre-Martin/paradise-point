@@ -15,12 +15,6 @@ export default function PreciosPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
             {/* Primera fila */}
-            <section className="border-l-4 border-teal-500 pl-6 py-4 bg-teal-50 rounded-r-lg">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Días de Semana</h2>
-              <p className="text-gray-600 mb-4">Martes a Viernes (4 días)</p>
-              <div className="text-3xl font-bold text-teal-600">${PRICES.tuesdayToFriday.toLocaleString('es-AR')} ARS</div>
-            </section>
-
             <section className="border-l-4 border-orange-500 pl-6 py-4 bg-orange-50 rounded-r-lg">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Fin de Semana</h2>
               <p className="text-gray-600 mb-4">Sábado y Domingo (2 días)</p>
@@ -35,9 +29,15 @@ export default function PreciosPage() {
             </section>
 
             <section className="border-l-4 border-purple-500 pl-6 py-4 bg-purple-50 rounded-r-lg">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Semana Completa</h2>
-              <p className="text-gray-600 mb-4">Martes a Domingo (6 días)</p>
-              <div className="text-3xl font-bold text-purple-600">${PRICES.tuesdayToSunday.toLocaleString('es-AR')} ARS</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Lunes a Viernes</h2>
+              <p className="text-gray-600 mb-4">Lunes a Viernes (5 días)</p>
+              <div className="text-3xl font-bold text-purple-600">${PRICES.mondayToFriday.toLocaleString('es-AR')} ARS</div>
+            </section>
+
+            <section className="border-l-4 border-indigo-500 pl-6 py-4 bg-indigo-50 rounded-r-lg">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Semana Completa con Lunes</h2>
+              <p className="text-gray-600 mb-4">Lunes a Domingo (7 días)</p>
+              <div className="text-3xl font-bold text-indigo-600">${PRICES.mondayToSunday.toLocaleString('es-AR')} ARS</div>
             </section>
           </div>
 

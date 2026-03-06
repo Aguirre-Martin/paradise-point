@@ -5,9 +5,10 @@ import {
   isMonday, 
   getBlockDates, 
   getDayOfWeek,
-  getTuesdayToFridayDates,
+  getMondayToFridayDates,
   getWeekendDates,
   getTuesdayToSundayDates,
+  getMondayToSundayDates,
   detectBlockType,
   getBlockInfo,
   getBlockPrice,
@@ -37,18 +38,14 @@ export default function CalendarBooking({ data = {} }) {
     return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
   }
 
-  // Función para detectar si hay un bloque "Martes a Viernes" completo en la selección
-  const hasTuesdayToFriday = (dates) => {
-    const sortedDates = Array.from(dates).sort().filter(d => !isMonday(d))
-    if (sortedDates.length < 4) return false
-    
-    // Buscar cualquier martes, miércoles, jueves o viernes
+  const hasMondayToFriday = (dates) => {
+    const sortedDates = Array.from(dates).sort()
+    if (sortedDates.length < 5) return false
     for (const date of sortedDates) {
       const dayOfWeek = getDayOfWeek(date)
-      if (dayOfWeek >= 2 && dayOfWeek <= 5) {
-        const tuesdayToFriday = getTuesdayToFridayDates(date)
-        const allPresent = tuesdayToFriday.every(d => dates.has(d))
-        if (allPresent) return true
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+        const mondayToFriday = getMondayToFridayDates(date)
+        if (mondayToFriday.length === 5 && mondayToFriday.every(d => dates.has(d))) return true
       }
     }
     return false
@@ -70,37 +67,33 @@ export default function CalendarBooking({ data = {} }) {
     return false
   }
 
-  // Función para detectar si hay "Martes a Domingo" completo
+  // Lunes a Domingo (7 días)
+  const hasMondayToSunday = (dates) => {
+    const sortedDates = Array.from(dates).sort()
+    if (sortedDates.length !== 7) return false
+    const firstDay = getDayOfWeek(sortedDates[0])
+    const lastDay = getDayOfWeek(sortedDates[6])
+    return firstDay === 1 && lastDay === 0
+  }
+
+  // Martes a Domingo (6 días)
   const hasTuesdayToSunday = (dates) => {
     const sortedDates = Array.from(dates).sort().filter(d => !isMonday(d))
     if (sortedDates.length !== 6) return false
-    
-    const firstDate = sortedDates[0]
-    const lastDate = sortedDates[5]
-    const firstDay = getDayOfWeek(firstDate)
-    const lastDay = getDayOfWeek(lastDate)
-    
+    const firstDay = getDayOfWeek(sortedDates[0])
+    const lastDay = getDayOfWeek(sortedDates[5])
     return firstDay === 2 && lastDay === 0
   }
 
   const calculateTotal = () => {
     if (selectedDates.size === 0) return 0
-    
-    // Primero verificar si es "Martes a Domingo" completo
-    if (hasTuesdayToSunday(selectedDates)) {
-      return getBlockPrice('tuesdayToSunday')
+
+    if (hasMondayToSunday(selectedDates)) {
+      return getBlockPrice('mondayToSunday')
     }
     
-    // Si hay "Martes a Viernes" + "Sábado y Domingo", convertir en "Martes a Domingo"
-    if (hasTuesdayToFriday(selectedDates) && hasWeekend(selectedDates)) {
-      const sortedDates = Array.from(selectedDates).sort().filter(d => !isMonday(d))
-      if (sortedDates.length === 6) {
-        const firstDay = getDayOfWeek(sortedDates[0])
-        const lastDay = getDayOfWeek(sortedDates[5])
-        if (firstDay === 2 && lastDay === 0) {
-          return getBlockPrice('tuesdayToSunday')
-        }
-      }
+    if (hasTuesdayToSunday(selectedDates)) {
+      return getBlockPrice('tuesdayToSunday')
     }
     
     // Calcular por bloques individuales
@@ -109,30 +102,39 @@ export default function CalendarBooking({ data = {} }) {
     const sortedDates = Array.from(selectedDates).sort()
     
     for (const date of sortedDates) {
-      if (processedDates.has(date) || isMonday(date)) continue
+      if (processedDates.has(date)) continue
       
       const dayOfWeek = getDayOfWeek(date)
       
-      // Verificar si es parte de "Martes a Viernes"
-      if (dayOfWeek >= 2 && dayOfWeek <= 5) {
-        const tuesdayToFriday = getTuesdayToFridayDates(date)
-        const blockComplete = tuesdayToFriday.every(d => selectedDates.has(d))
-        if (blockComplete && !processedDates.has(tuesdayToFriday[0])) {
-          total += getBlockPrice('tuesdayToFriday')
-          tuesdayToFriday.forEach(d => processedDates.add(d))
-          continue
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+        const mondayToFriday = getMondayToFridayDates(date)
+        if (mondayToFriday.length === 5) {
+          const blockComplete = mondayToFriday.every(d => selectedDates.has(d))
+          if (blockComplete && !processedDates.has(mondayToFriday[0])) {
+            total += getBlockPrice('mondayToFriday')
+            mondayToFriday.forEach(d => processedDates.add(d))
+            continue
+          }
         }
       }
       
-      // Verificar si es parte de "Viernes a Domingo" (solo si no es parte de Martes a Viernes)
+      if (date === '2026-03-23' || date === '2026-03-24' || date === '2025-03-23' || date === '2025-03-24') {
+        const year = date.slice(0, 4)
+        const feriadoBlock = [year + '-03-23', year + '-03-24']
+        if (feriadoBlock.every(d => selectedDates.has(d)) && !processedDates.has(feriadoBlock[0])) {
+          total += getBlockPrice('feriado23y24Marzo')
+          feriadoBlock.forEach(d => processedDates.add(d))
+          continue
+        }
+      }
+
       if (dayOfWeek === 5) {
         const fridayToSunday = getBlockDates(date)
         const blockComplete = fridayToSunday.every(d => selectedDates.has(d))
-        // Solo aplicar si no es parte de un bloque "Martes a Viernes"
-        const tuesdayToFriday = getTuesdayToFridayDates(date)
-        const isPartOfTuesdayToFriday = tuesdayToFriday.every(d => selectedDates.has(d))
+        const mondayToFriday = getMondayToFridayDates(date)
+        const isPartOfMondayToFriday = mondayToFriday.length === 5 && mondayToFriday.every(d => selectedDates.has(d))
         
-        if (blockComplete && !isPartOfTuesdayToFriday && !processedDates.has(fridayToSunday[0])) {
+        if (blockComplete && !isPartOfMondayToFriday && !processedDates.has(fridayToSunday[0])) {
           total += getBlockPrice('fridayToSunday')
           fridayToSunday.forEach(d => processedDates.add(d))
           continue
@@ -155,72 +157,60 @@ export default function CalendarBooking({ data = {} }) {
   }
 
   const handleDayClick = (date) => {
-    if (isMonday(date)) {
-      return
-    }
-    
     const dayData = data[date]
-    
+
     if (dayData?.status === 'reserved') {
       return
     }
 
     const dayOfWeek = getDayOfWeek(date)
     const newDates = new Set(selectedDates)
-    
-    // Si clickean martes, miércoles o jueves → seleccionar "Martes a Viernes"
-    if (dayOfWeek >= 2 && dayOfWeek <= 4) {
-      const tuesdayToFriday = getTuesdayToFridayDates(date)
-      
-      // Verificar disponibilidad
-      const allAvailable = tuesdayToFriday.every(d => {
-        if (isMonday(d)) return false
-        return data[d]?.status !== 'reserved'
-      })
-      
+
+    const feriadoMarzoBlock = getBlockDates(date)
+    if (feriadoMarzoBlock.length === 2 && (date === '2026-03-23' || date === '2026-03-24' || date === '2025-03-23' || date === '2025-03-24')) {
+      const allAvailable = feriadoMarzoBlock.every(d => data[d]?.status !== 'reserved')
       if (!allAvailable) return
-      
-      // Verificar si el bloque completo ya está seleccionado
-      const blockIsSelected = tuesdayToFriday.every(d => selectedDates.has(d))
-      
+      const blockIsSelected = feriadoMarzoBlock.every(d => selectedDates.has(d))
       if (blockIsSelected) {
-        // Deseleccionar el bloque
-        tuesdayToFriday.forEach(d => newDates.delete(d))
+        feriadoMarzoBlock.forEach(d => newDates.delete(d))
       } else {
-        // Seleccionar el bloque
-        tuesdayToFriday.forEach(d => {
-          if (!isMonday(d) && data[d]?.status !== 'reserved') {
-            newDates.add(d)
-          }
+        feriadoMarzoBlock.forEach(d => { if (data[d]?.status !== 'reserved') newDates.add(d) })
+      }
+      setSelectedDates(newDates)
+      return
+    }
+
+    // Lunes, martes, miércoles o jueves → seleccionar "Lunes a Viernes"
+    if (dayOfWeek >= 1 && dayOfWeek <= 4) {
+      const mondayToFriday = getMondayToFridayDates(date)
+      if (mondayToFriday.length !== 5) {
+        setSelectedDates(newDates)
+        return
+      }
+      const allAvailable = mondayToFriday.every(d => data[d]?.status !== 'reserved')
+      if (!allAvailable) return
+      const blockIsSelected = mondayToFriday.every(d => selectedDates.has(d))
+      if (blockIsSelected) {
+        mondayToFriday.forEach(d => newDates.delete(d))
+      } else {
+        mondayToFriday.forEach(d => {
+          if (data[d]?.status !== 'reserved') newDates.add(d)
         })
       }
     }
-    // Si clickean viernes → verificar contexto
     else if (dayOfWeek === 5) {
-      // Primero verificar si ya hay martes-jueves seleccionados
-      const tuesdayToFriday = getTuesdayToFridayDates(date)
-      const hasTuesdayToThursday = tuesdayToFriday.slice(0, 3).every(d => selectedDates.has(d))
+      const mondayToFriday = getMondayToFridayDates(date)
+      const hasMondayToThursday = mondayToFriday.length === 5 && mondayToFriday.slice(0, 4).every(d => selectedDates.has(d))
       
-      if (hasTuesdayToThursday) {
-        // Si ya hay martes-jueves, agregar viernes al bloque "Martes a Viernes"
-        const allAvailable = tuesdayToFriday.every(d => {
-          if (isMonday(d)) return false
-          return data[d]?.status !== 'reserved'
-        })
-        
+      if (hasMondayToThursday) {
+        const allAvailable = mondayToFriday.every(d => data[d]?.status !== 'reserved')
         if (!allAvailable) return
-        
-        const blockIsSelected = tuesdayToFriday.every(d => selectedDates.has(d))
-        
+        const blockIsSelected = mondayToFriday.every(d => selectedDates.has(d))
         if (blockIsSelected) {
-          // Deseleccionar el bloque completo
-          tuesdayToFriday.forEach(d => newDates.delete(d))
+          mondayToFriday.forEach(d => newDates.delete(d))
         } else {
-          // Agregar viernes al bloque existente
-          tuesdayToFriday.forEach(d => {
-            if (!isMonday(d) && data[d]?.status !== 'reserved') {
-              newDates.add(d)
-            }
+          mondayToFriday.forEach(d => {
+            if (data[d]?.status !== 'reserved') newDates.add(d)
           })
         }
       } else {
@@ -299,45 +289,47 @@ export default function CalendarBooking({ data = {} }) {
 
   // Función para obtener el precio por día para una fecha específica
   const getPricePerDay = (date) => {
-    if (!selectedDates.has(date) || isMonday(date)) return null
+    if (!selectedDates.has(date)) return null
+
+    if (hasMondayToSunday(selectedDates)) {
+      const info = getBlockInfo('mondayToSunday')
+      return info ? Math.round(info.pricePerDay) : null
+    }
+
+    const y = date.slice(0, 4)
+    if ((date === y + '-03-23' || date === y + '-03-24') && selectedDates.has(y + '-03-23') && selectedDates.has(y + '-03-24')) {
+      return null
+    }
     
-    // Primero verificar si es parte de "Martes a Domingo" completo
     if (hasTuesdayToSunday(selectedDates)) {
       const dayOfWeek = getDayOfWeek(date)
-      // Martes a Viernes: 100000 cada uno
-      if (dayOfWeek >= 2 && dayOfWeek <= 5) {
-        return 100000
-      }
-      // Sábado y Domingo: 125000 cada uno
-      if (dayOfWeek === 6 || dayOfWeek === 0) {
-        return 125000
-      }
+      if (dayOfWeek >= 2 && dayOfWeek <= 5) return 100000
+      if (dayOfWeek === 6 || dayOfWeek === 0) return 125000
     }
     
-    // Verificar si es parte de "Martes a Viernes" solo
-    const tuesdayToFriday = getTuesdayToFridayDates(date)
-    if (tuesdayToFriday.length > 0 && tuesdayToFriday.every(d => selectedDates.has(d))) {
+    const dayOfWeek = getDayOfWeek(date)
+    
+    const mondayToFriday = getMondayToFridayDates(date)
+    if (mondayToFriday.length === 5 && mondayToFriday.every(d => selectedDates.has(d))) {
       const fridayToSunday = getBlockDates(date)
       const isPartOfFridayToSunday = fridayToSunday.every(d => selectedDates.has(d))
-      // Si no es parte de Viernes a Domingo, entonces es Martes a Viernes solo
-      if (!isPartOfFridayToSunday || getDayOfWeek(date) < 5) {
-        return 100000 // 400000 / 4
+      if (!isPartOfFridayToSunday || dayOfWeek < 5) {
+        const info = getBlockInfo('mondayToFriday')
+        return info ? Math.round(info.pricePerDay) : null
       }
     }
     
-    // Verificar si es parte de "Viernes a Domingo" solo
-    const dayOfWeek = getDayOfWeek(date)
     if (dayOfWeek === 5) {
       const fridayToSunday = getBlockDates(date)
       if (fridayToSunday.every(d => selectedDates.has(d))) {
-        const tuesdayToFriday = getTuesdayToFridayDates(date)
-        const isPartOfTuesdayToFriday = tuesdayToFriday.every(d => selectedDates.has(d))
-        // Si no es parte de Martes a Viernes, entonces es Viernes a Domingo solo
-        if (!isPartOfTuesdayToFriday) {
-          return 125000 // 375000 / 3
+        const isPartOfMondayToFriday = mondayToFriday.length === 5 && mondayToFriday.every(d => selectedDates.has(d))
+        if (!isPartOfMondayToFriday) {
+          return 125000
         }
       }
     }
+    
+    if (isMonday(date)) return null
     
     // Verificar si es parte de "Sábado y Domingo" solo
     if (dayOfWeek === 6 || dayOfWeek === 0) {
@@ -358,43 +350,61 @@ export default function CalendarBooking({ data = {} }) {
     const blocks = []
     const processedDates = new Set()
     
-    // Primero verificar si es "Martes a Domingo" completo
+    if (hasMondayToSunday(selectedDates)) {
+      const mondayToSunday = getMondayToSundayDates(sortedDates[0])
+      return [{
+        dates: mondayToSunday,
+        info: getBlockInfo('mondayToSunday')
+      }]
+    }
+    
     if (hasTuesdayToSunday(selectedDates)) {
-      const tuesdayToSunday = getTuesdayToSundayDates(sortedDates[0])
+      const tuesdayToSunday = getTuesdayToSundayDates(sortedDates.find(d => !isMonday(d)) || sortedDates[0])
       return [{
         dates: tuesdayToSunday,
         info: getBlockInfo('tuesdayToSunday')
       }]
     }
     
-    // Verificar bloques individuales
     for (const date of sortedDates) {
-      if (processedDates.has(date) || isMonday(date)) continue
-      
+      if (processedDates.has(date)) continue
       const dayOfWeek = getDayOfWeek(date)
-      
-      // Verificar "Martes a Viernes"
-      if (dayOfWeek >= 2 && dayOfWeek <= 5) {
-        const tuesdayToFriday = getTuesdayToFridayDates(date)
-        const blockComplete = tuesdayToFriday.every(d => selectedDates.has(d))
-        if (blockComplete && !processedDates.has(tuesdayToFriday[0])) {
+
+      if (date === '2026-03-23' || date === '2026-03-24' || date === '2025-03-23' || date === '2025-03-24') {
+        const year = date.slice(0, 4)
+        const feriadoBlock = [year + '-03-23', year + '-03-24']
+        if (feriadoBlock.every(d => selectedDates.has(d)) && !processedDates.has(feriadoBlock[0])) {
           blocks.push({
-            dates: tuesdayToFriday,
-            info: getBlockInfo('tuesdayToFriday')
+            dates: feriadoBlock,
+            info: getBlockInfo('feriado23y24Marzo')
           })
-          tuesdayToFriday.forEach(d => processedDates.add(d))
+          feriadoBlock.forEach(d => processedDates.add(d))
           continue
         }
       }
       
-      // Verificar "Viernes a Domingo"
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+        const mondayToFriday = getMondayToFridayDates(date)
+        if (mondayToFriday.length === 5) {
+          const blockComplete = mondayToFriday.every(d => selectedDates.has(d))
+          if (blockComplete && !processedDates.has(mondayToFriday[0])) {
+            blocks.push({
+              dates: mondayToFriday,
+              info: getBlockInfo('mondayToFriday')
+            })
+            mondayToFriday.forEach(d => processedDates.add(d))
+            continue
+          }
+        }
+      }
+      
       if (dayOfWeek === 5) {
         const fridayToSunday = getBlockDates(date)
         const blockComplete = fridayToSunday.every(d => selectedDates.has(d))
-        const tuesdayToFriday = getTuesdayToFridayDates(date)
-        const isPartOfTuesdayToFriday = tuesdayToFriday.every(d => selectedDates.has(d))
+        const mondayToFriday = getMondayToFridayDates(date)
+        const isPartOfMondayToFriday = mondayToFriday.length === 5 && mondayToFriday.every(d => selectedDates.has(d))
         
-        if (blockComplete && !isPartOfTuesdayToFriday && !processedDates.has(fridayToSunday[0])) {
+        if (blockComplete && !isPartOfMondayToFriday && !processedDates.has(fridayToSunday[0])) {
           blocks.push({
             dates: fridayToSunday,
             info: getBlockInfo('fridayToSunday')
@@ -461,16 +471,15 @@ export default function CalendarBooking({ data = {} }) {
           const isSelected = selectedDates.has(date)
           const isReserved = dayData.status === 'reserved'
           const isInquiry = dayData.status === 'inquiry'
-          const isMondayBlocked = isMonday(date)
 
           return (
             <div
               key={date}
-              onClick={() => !isReserved && !isMondayBlocked && handleDayClick(date)}
+              onClick={() => !isReserved && handleDayClick(date)}
               className={`
                 aspect-square border-2 rounded-lg p-2 flex flex-col items-center justify-center
                 transition-all
-                ${isReserved || isMondayBlocked
+                ${isReserved
                   ? 'bg-gray-200 border-gray-300 line-through cursor-not-allowed opacity-50' 
                   : isInquiry
                   ? 'bg-orange-100 border-orange-300 cursor-pointer'
@@ -479,12 +488,22 @@ export default function CalendarBooking({ data = {} }) {
                   : 'bg-green-100 border-green-300 hover:bg-green-200 cursor-pointer'
                 }
               `}
-              title={isMondayBlocked ? 'Lunes no disponible (día de limpieza)' : ''}
             >
               <div className={`text-lg font-semibold ${isSelected ? 'text-white' : 'text-gray-900'}`}>
                 {day}
               </div>
-              {isSelected && !isMondayBlocked && (() => {
+              {isSelected && (() => {
+                const y = date.slice(0, 4)
+                const isFeriadoMarzo = (date === y + '-03-23' || date === y + '-03-24') &&
+                  selectedDates.has(y + '-03-23') && selectedDates.has(y + '-03-24')
+                if (isFeriadoMarzo) {
+                  const info = getBlockInfo('feriado23y24Marzo')
+                  return (
+                    <div className="text-xs mt-1 text-white/90 text-center font-medium">
+                      Feriado ${info?.price.toLocaleString('es-AR') ?? '125.000'}
+                    </div>
+                  )
+                }
                 const pricePerDay = getPricePerDay(date)
                 if (pricePerDay) {
                   return (
@@ -495,11 +514,6 @@ export default function CalendarBooking({ data = {} }) {
                 }
                 return null
               })()}
-              {isMondayBlocked && (
-                <div className="text-xs mt-1 text-gray-500">
-                  No disponible
-                </div>
-              )}
             </div>
           )
         })}
@@ -512,10 +526,11 @@ export default function CalendarBooking({ data = {} }) {
           Los alquileres se realizan por <strong>bloques completos</strong>, no por días sueltos:
         </p>
         <ul className="text-sm text-gray-700 space-y-1 ml-4">
-          <li>• <strong>Martes a Viernes:</strong> Hacé clic en martes, miércoles o jueves y se seleccionan los 4 días</li>
-          <li>• <strong>Viernes a Domingo:</strong> Hacé clic en viernes (sin tener martes-jueves seleccionados) y se seleccionan los 3 días</li>
+          <li>• <strong>Lunes a Viernes:</strong> Hacé clic en lunes, martes, miércoles o jueves y se seleccionan los 5 días</li>
+          <li>• <strong>Viernes a Domingo:</strong> Hacé clic en viernes (sin tener lunes–jueves seleccionados) y se seleccionan los 3 días</li>
           <li>• <strong>Sábado y Domingo:</strong> Hacé clic en sábado o domingo y se seleccionan ambos días</li>
-          <li>• <strong>Martes a Domingo:</strong> Si seleccionás "Martes a Viernes" y luego "Sábado y Domingo", se combina en un bloque de 6 días con precio especial</li>
+          <li>• <strong>23 y 24 de marzo:</strong> Feriado elegible — hacé clic en el 23 o el 24 y se seleccionan los 2 días ($125.000)</li>
+          <li>• <strong>Lunes a Domingo:</strong> Si seleccionás los 7 días (lunes a domingo), aplica el bloque semanal completo (7 días)</li>
         </ul>
       </div>
 
